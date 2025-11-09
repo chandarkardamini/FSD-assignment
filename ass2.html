@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DOM & jQuery Manipulation Demo (Modern UI)</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* 🌐 Global Styles */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 40px 20px;
+    background: radial-gradient(circle at top left, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    text-align: center;
+    color: #00e0ff;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px rgba(0, 224, 255, 0.5);
+  }
+
+  p {
+    font-size: 1.05rem;
+    margin: 10px 0;
+  }
+
+  .textClass {
+    color: #9effd9;
+  }
+
+  /* 🌈 Container */
+  .container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border-radius: 15px;
+    padding: 25px 30px;
+    margin: 20px auto;
+    max-width: 850px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+  }
+
+  /* 🖼️ Image */
+  #imageContainer {
+    text-align: center;
+    margin: 20px 0 30px;
+  }
+  #imageContainer img {
+    width: 250px;
+    border-radius: 15px;
+    box-shadow: 0 0 25px rgba(0, 224, 255, 0.4);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  }
+  #imageContainer img:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 35px rgba(0, 224, 255, 0.7);
+  }
+
+  /* 🔘 Buttons */
+  button {
+    margin: 10px 10px 20px 0;
+    padding: 12px 22px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 30px;
+    color: #fff;
+    background: linear-gradient(135deg, #00e0ff, #0077ff);
+    cursor: pointer;
+    box-shadow: 0 0 10px #00e0ff;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+  }
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px #00e0ff;
+  }
+  button:active {
+    transform: translateY(1px);
+  }
+
+  /* 📦 Parent Div */
+  #parentDiv {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 15px;
+    min-height: 60px;
+    color: #b9fbc0;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 40px 0 30px;
+  }
+
+  /* 🧾 Form */
+  form#demoForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    padding: 25px;
+    border-radius: 15px;
+    max-width: 400px;
+    margin: auto;
+    box-shadow: 0 4px 25px rgba(0, 224, 255, 0.3);
+  }
+
+  form input {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 1rem;
+    transition: box-shadow 0.3s ease;
+  }
+
+  form input:focus {
+    box-shadow: 0 0 10px #00e0ff;
+  }
+
+  #submitBtn {
+    background: linear-gradient(135deg, #00ff99, #00ccff);
+    color: #000;
+    font-weight: 700;
+    padding: 14px;
+    border-radius: 30px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0, 255, 153, 0.5);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+  }
+
+  #submitBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(0, 255, 153, 0.8);
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .container {
+      padding: 20px;
+    }
+    button {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+  }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+  <h1 id="header">🌐 DOM & jQuery Manipulation Demo</h1>
+
+  <div class="container">
+    <p class="textClass">This is the first paragraph with class "textClass".</p>
+    <p class="textClass">This is the second paragraph with class "textClass".</p>
+    <p>This is a paragraph without any class.</p>
+
+    <div id="imageContainer">
+      <img id="demoImage" src="https://via.placeholder.com/250" alt="Demo Image">
+    </div>
+
+    <div>
+      <button id="btnChangeText">Change Header Text</button>
+      <button id="btnChangeColor">Change Paragraph Colors</button>
+      <button id="btnMoveElements">Move Elements</button>
+      <button id="btnChangeImage">Change Image</button>
+      <button id="btnAddTextNode">Add Text</button>
+      <button id="btnDeleteNode">Delete Text</button>
+    </div>
+
+    <div id="parentDiv">Parent Div (text nodes appear here)</div>
+  </div>
+
+  <hr>
+
+  <h2 style="text-align:center; color:#00ffcc;">🧾 Sample Form (jQuery Demo)</h2>
+
+  <form id="demoForm" novalidate>
+    <input type="text" name="fname" placeholder="First Name" required>
+    <input type="text" name="lname" placeholder="Last Name" required>
+    <input type="email" name="email" placeholder="Email Address" required>
+    <button type="submit" id="submitBtn">Submit</button>
+  </form>
+
+<script>
+  // Vanilla JS DOM Manipulation
+  document.getElementById('btnChangeText').addEventListener('click', () => {
+    document.getElementById('header').innerHTML = '🚀 Header Changed via DOM!';
+  });
+
+  document.getElementById('btnChangeColor').addEventListener('click', () => {
+    const paras = document.getElementsByTagName('p');
+    for (let p of paras) {
+      p.style.color = '#ffcc00';
+    }
+  });
+
+  document.getElementById('btnMoveElements').addEventListener('click', () => {
+    const elems = document.getElementsByClassName('textClass');
+    for (let el of elems) {
+      el.style.position = 'relative';
+      el.style.left = '25px';
+    }
+  });
+
+  document.getElementById('btnChangeImage').addEventListener('click', () => {
+    document.getElementById('demoImage').src = 'https://via.placeholder.com/250/00e0ff/000000?text=New+Image';
+  });
+
+  document.getElementById('btnAddTextNode').addEventListener('click', () => {
+    const parent = document.getElementById('parentDiv');
+    const newText = document.createTextNode('🌟 New text node added! ');
+    parent.appendChild(newText);
+  });
+
+  document.getElementById('btnDeleteNode').addEventListener('click', () => {
+    const parent = document.getElementById('parentDiv');
+    if (parent.firstChild) parent.removeChild(parent.firstChild);
+    else alert('No node to delete!');
+  });
+
+  // jQuery Functions
+  $(document).ready(function() {
+    $('#btnChangeText').click(function() {
+      $(this).text('Text Changed (jQuery Active)');
+    });
+
+    $('#btnChangeColor').click(function() {
+      $('body').css({
+        'background': 'linear-gradient(135deg, #1e3c72, #2a5298)',
+        'transition': 'background 1s ease'
+      });
+    });
+
+    $('#demoForm').submit(function(e) {
+      e.preventDefault();
+      let formData = $(this).serializeArray();
+      let message = '📋 Submitted Data:\n';
+      formData.forEach(function(field) {
+        message += `${field.name}: ${field.value}\n`;
+      });
+      alert(message);
+    });
+  });
+</script>
+</body>
+</html>
