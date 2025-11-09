@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BrewHouse — Single-file SPA with Orders</title>
+<meta name="description" content="BrewHouse — Single-file demo: login + simulated OTP, menu, cart, my orders, contact (map), offer banner, dark premium theme." />
+<style>
+  :root{
+    --bg:#071018; --card:#0f1720; --muted:#9aa9bd; --accent:#d4af37; --accent-2:#c07b00; --glass:rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#eaf2ff;background:linear-gradient(180deg,#041018 0%,#071018 100%);-webkit-font-smoothing:antialiased}
+  header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.03);position:sticky;top:0;background:linear-gradient(180deg, rgba(2,6,23,0.6), rgba(2,6,23,0.4));backdrop-filter: blur(6px);z-index:60}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand img{width:44px;height:44px;border-radius:10px;object-fit:cover}
+  nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  nav button{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600}
+  nav button.active{background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));color:#fff;border-color:rgba(212,175,55,0.12)}
+  main{max-width:1200px;margin:20px auto;padding:0 18px}
+  .hero{display:grid;grid-template-columns:1fr 420px;gap:18px;align-items:center;margin-bottom:18px}
+  .hero-card{background:linear-gradient(180deg,rgba(255,255,255,0.02),var(--glass));padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+  h1{margin:0;font-size:30px;color:#fff}
+  .small{font-size:13px;color:var(--muted)}
+  .btn{padding:10px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:700}
+  .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#081012;box-shadow:0 6px 18px rgba(192,123,0,0.12)}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+  .menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+  .card img{width:100%;height:160px;object-fit:cover}
+  .card .content{padding:12px}
+  .price{color:var(--accent);font-weight:700}
+  .cart-item{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.02)}
+  .cart-item img{width:72px;height:64px;object-fit:cover;border-radius:8px}
+  .login-box{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);width:360px}
+  .login-box input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff;margin:8px 0}
+  .modal-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);background:rgba(2,6,23,0.6);z-index:80;opacity:0;pointer-events:none;transition:opacity .25s}
+  .modal-overlay.show{opacity:1;pointer-events:auto}
+  .modal{width:420px;background:linear-gradient(180deg,#071016,#0f1720);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.04);transform:translateY(18px) scale(.98);transition:transform .28s,opacity .25s;opacity:0}
+  .modal-overlay.show .modal{transform:translateY(0) scale(1);opacity:1}
+  .otp-code{font-weight:700;font-size:20px;letter-spacing:6px;margin:8px 0;padding:10px;border-radius:8px;background:rgba(212,175,55,0.06);text-align:center;color:var(--accent)}
+  .toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.96);background:#062028;color:#fff;padding:16px 20px;border-radius:12px;box-shadow:0 18px 60px rgba(2,6,23,0.6);z-index:90;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+  .toast.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  .map-full{width:100%;height:420px;border:0;margin-top:12px;border-radius:8px;overflow:hidden}
+  footer{margin-top:20px;padding:18px;color:var(--muted);border-top:1px solid rgba(255,255,255,0.02);text-align:center}
+  @media(max-width:920px){ .hero{grid-template-columns:1fr}.hero-right{width:100%} .hero-right img{height:220px} .login-box{width:100%} }
+
+  /* sections + transition */
+  .app-section{display:none;opacity:0;transform:translateY(10px);transition:opacity .28s,transform .28s}
+  .app-section.show{display:block;opacity:1;transform:translateY(0)}
+  .offer-banner{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#081012;padding:10px 16px;border-radius:10px;z-index:100;box-shadow:0 12px 30px rgba(0,0,0,0.35);display:flex;gap:12px;align-items:center}
+  .offer-close{background:transparent;border:0;font-weight:800;cursor:pointer}
+  .orders-list{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+  .order-card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+  .order-meta{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .order-items{margin-top:8px}
+  .order-items li{font-size:13px;color:var(--muted);margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<!-- Offer banner (shows every page load) -->
+<div id="offer" class="offer-banner" role="region" aria-live="polite" style="display:none">
+  <div id="offer-text">🎉 Flat 20% Off on Cappuccino Today!</div>
+  <button id="offer-close" class="offer-close" aria-label="Close offer">✕</button>
+</div>
+
+<header>
+  <div class="brand"><img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=80&q=60" alt="logo"><div><div style="font-weight:700">BrewHouse</div><div style="font-size:12px;color:var(--muted)">Crafting Happiness</div></div></div>
+  <nav id="main-nav">
+    <button data-section="home" class="active">Home</button>
+    <button data-section="menu">Menu</button>
+    <button data-section="cart">Cart</button>
+    <button data-section="orders">My Orders</button>
+    <button data-section="about">About</button>
+    <button data-section="contact">Contact</button>
+    <button id="logout-btn" style="display:none">Logout</button>
+  </nav>
+</header>
+
+<main id="app" style="max-width:1100px;margin:28px auto;padding:0 18px">
+
+  <!-- LOGIN -->
+  <section id="section-login" class="app-section">
+    <div class="hero">
+      <div class="hero-card">
+        <h1>Freshly Brewed. Perfectly Served.</h1>
+        <p class="small">Sign in to place orders, save your cart, and get directions to BrewHouse at MIT-WPU.</p>
+
+        <div style="margin-top:16px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
+          <div class="login-box">
+            <h3 style="margin:0;color:#fff">Sign In</h3>
+            <div style="display:flex;gap:8px;margin:10px 0">
+              <button id="tab-pass" class="btn btn-ghost">Password</button>
+              <button id="tab-otp" class="btn btn-ghost">Phone + OTP</button>
+            </div>
+
+            <div id="pass-form">
+              <label class="small">Username</label>
+              <input id="user-name" placeholder="admin">
+              <label class="small">Password</label>
+              <input id="user-pass" type="password" placeholder="1234">
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="btn btn-primary" id="pw-login-btn">Sign In</button>
+                <button class="btn btn-ghost" id="autofill-btn">Auto-fill</button>
+              </div>
+              <p class="small" style="margin-top:8px">For demo: <strong>admin</strong> / <strong>1234</strong>.</p>
+            </div>
+
+            <div id="otp-intro" class="hidden">
+              <label class="small">Phone</label>
+              <input id="phone-input" placeholder="+91 9xxxxxxxxx">
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button class="btn btn-primary" id="open-otp-btn">Login with OTP</button>
+              </div>
+              <p class="small" style="margin-top:8px">OTP is simulated in this offline demo (shown in modal for testing).</p>
+            </div>
+          </div>
+
+          <div style="width:420px">
+            <img id="hero-image" src="https://i.pinimg.com/originals/b4/d2/4e/b4d24ec5871681f6ae8b0029c5a09c71.jpg" alt="modern cafe" style="width:420px;height:260px;object-fit:cover;border-radius:10px">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;width:320px">
+        <div class="hero-card" style="padding:14px">
+          <h4 style="margin:0;color:#fff">Visit BrewHouse</h4>
+          <p class="small" style="margin-top:8px">Located at MIT-WPU Campus, Kothrud — open 8:00 AM to 9:00 PM.</p>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn btn-primary" data-link="menu">Order Now</button>
+            <button class="btn btn-ghost" data-link="contact">Find a Store</button>
+          </div>
+        </div>
+
+        <div class="hero-card" style="padding:14px">
+          <h4 style="margin:0;color:#fff">Quick Info</h4>
+          <p class="small" style="margin-top:8px">Student discounts on weekdays • Fresh beans daily • Pickup available</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section id="section-home" class="app-section">
+    <div style="margin-bottom:12px">
+      <h1 style="color:#fff">Welcome to BrewHouse</h1>
+      <p class="small">Savour specialty coffee crafted from carefully selected beans. Cozy interiors • Fast Wi-Fi • Student friendly.</p>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" data-link="menu">Order Now</button>
+      <button class="btn btn-ghost" data-link="contact">Find on Map</button>
+    </div>
+
+    <h3 style="color:#fff;margin-top:8px">Featured</h3>
+    <div class="menu-grid" id="featured-grid"></div>
+  </section>
+
+  <!-- MENU -->
+  <section id="section-menu" class="app-section">
+    <h2 style="color:#fff">Menu</h2>
+
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+      <input id="menu-search" placeholder="Search (latte, muffin...)" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff">
+      <select id="menu-filter" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff">
+        <option value="all">All</option>
+        <option value="coffee">Coffee</option>
+        <option value="cold">Cold Drinks</option>
+        <option value="snacks">Snacks</option>
+      </select>
+      <button class="btn btn-primary" id="menu-search-btn">Search</button>
+    </div>
+
+    <div class="menu-grid" id="menu-grid" style="margin-top:12px"></div>
+  </section>
+
+  <!-- CART -->
+  <section id="section-cart" class="app-section">
+    <h2 style="color:#fff">Your Cart</h2>
+    <div id="cart-list" style="margin-top:12px"></div>
+    <div style="text-align:right;margin-top:12px;color:var(--muted)"><strong id="cart-total">Subtotal: ₹0</strong></div>
+    <div style="text-align:right;margin-top:12px">
+      <button class="btn btn-primary" id="checkout-btn">Checkout</button>
+      <button class="btn btn-ghost" id="clear-cart-btn">Clear Cart</button>
+    </div>
+  </section>
+
+  <!-- MY ORDERS -->
+  <section id="section-orders" class="app-section">
+    <h2 style="color:#fff">My Orders</h2>
+    <p class="small" style="margin-top:6px">Past orders you placed on this device (stored locally).</p>
+    <div class="orders-list" id="orders-list"></div>
+    <div style="margin-top:12px"><button class="btn btn-ghost" id="clear-orders-btn">Clear All Orders</button></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="section-about" class="app-section">
+    <h2 style="color:#fff">About BrewHouse</h2>
+    <p class="small" style="margin-top:10px">At BrewHouse, every cup tells a story — of warmth, aroma, and connection. From freshly ground beans to cozy corners, we serve experiences, not just coffee.</p>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="section-contact" class="app-section">
+    <h2 style="color:#fff">Contact</h2>
+    <p class="small">BrewHouse — MIT-WPU Campus, Kothrud, Pune, Maharashtra 411038, India</p>
+    <p class="small">Email: <a href="mailto:brewhouse@gmail.com" style="color:var(--accent)">brewhouse@gmail.com</a></p>
+
+    <img src="https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=1600&q=60" alt="cafe interior" style="width:100%;height:320px;object-fit:cover;border-radius:8px;margin-top:12px">
+
+    <iframe class="map-full" src="https://www.google.com/maps?q=MIT-WPU+Pune&output=embed" allowfullscreen loading="lazy"></iframe>
+
+    <div style="margin-top:12px;display:flex;justify-content:center">
+      <a class="btn btn-primary" href="https://www.google.com/maps/search/?api=1&query=MIT-WPU+Pune" target="_blank" rel="noopener">Find Us on Google Maps</a>
+    </div>
+  </section>
+
+  <!-- THANK YOU -->
+  <section id="section-thank" class="app-section" style="text-align:center;padding:40px 12px">
+    <h1 style="color:#fff">Thank you for ordering with BrewHouse!</h1>
+    <p class="small" style="margin-top:12px">Your coffee is being prepared ☕ — we’ll see you soon.</p>
+    <div style="margin-top:14px"><button class="btn btn-primary" data-link="home">Back to Home</button></div>
+  </section>
+
+</main>
+
+<footer>
+  © <span id="year"></span> BrewHouse. All Rights Reserved.
+</footer>
+
+<!-- OTP Modal (SIMULATED) -->
+<div id="otp-modal" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="otp-title">
+    <h3 id="otp-title" style="margin:0;color:#fff">Phone verification</h3>
+    <p class="small">This demo uses a simulated OTP for offline testing. The generated code will be shown below.</p>
+
+    <div style="margin-top:8px">
+      <label class="small">Phone</label>
+      <input id="modal-phone" placeholder="+91 9xxxxxxxxx" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff">
+    </div>
+
+    <div style="margin-top:10px">
+      <button id="send-otp-btn" class="btn btn-primary">Send OTP</button>
+    </div>
+
+    <div id="otp-stage" class="hidden" style="margin-top:12px">
+      <div class="small">OTP (shown for demo)</div>
+      <div id="otp-code" class="otp-code">— — — — — —</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <input id="otp-input" placeholder="Enter OTP" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff">
+        <button id="verify-otp-btn" class="btn btn-primary">Verify</button>
+      </div>
+      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <div class="small">Resend in <span id="timer">30</span>s</div>
+        <button id="resend-btn" class="btn btn-ghost" disabled>Resend</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;text-align:right;">
+      <button id="close-otp" class="btn btn-ghost">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Center toast -->
+<div id="toast" class="toast" role="status" aria-live="polite">Action successful</div>
+
+<script>
+/* ---------------------------
+   App JS (single-file SPA with orders)
+   --------------------------- */
+(function(){
+  // menu data
+  const MENU = [
+    {id:1,name:'Espresso',price:80,category:'coffee',img:'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=1200&q=60'},
+    {id:2,name:'Cappuccino',price:140,category:'coffee',img:'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=60'},
+    {id:3,name:'Cold Brew',price:150,category:'cold',img:'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=1200&q=60'},
+    {id:4,name:'Iced Latte',price:160,category:'cold',img:'https://www.forkinthekitchen.com/wp-content/uploads/2022/07/220629.iced_.latte_.vanilla-8882.jpg'},
+    {id:5,name:'Chocolate Muffin',price:70,category:'snacks',img:'https://bing.com/th?id=OSK.ed03760520dee93520e6b849c57d4033'},
+    {id:6,name:'Avocado Toast',price:120,category:'snacks',img:'https://bing.com/th?id=OSK.22ec017cf2eef19495f68907251e461d'}
+  ];
+
+  // app state
+  const state = {
+    user: localStorage.getItem('brew_user') || null,
+    cart: JSON.parse(localStorage.getItem('brew_cart') || '[]'),
+    orders: JSON.parse(localStorage.getItem('brew_orders') || '[]'),
+    otp: null,
+    otpTimer: null,
+    otpCountdown: 30
+  };
+
+  // elements
+  const sections = {
+    login: document.getElementById('section-login'),
+    home: document.getElementById('section-home'),
+    menu: document.getElementById('section-menu'),
+    cart: document.getElementById('section-cart'),
+    orders: document.getElementById('section-orders'),
+    about: document.getElementById('section-about'),
+    contact: document.getElementById('section-contact'),
+    thank: document.getElementById('section-thank')
+  };
+  const toastEl = document.getElementById('toast');
+  const offerEl = document.getElementById('offer');
+  const offerClose = document.getElementById('offer-close');
+  const offerText = document.getElementById('offer-text');
+
+  // show offer every time
+  function showOffer(text){
+    offerText.textContent = text || '🎉 Flat 20% Off on Cappuccino Today!';
+    offerEl.style.display = 'flex';
+  }
+  offerClose.addEventListener('click', ()=> offerEl.style.display = 'none');
+
+  // section helpers
+  function showSection(name){
+    if(!state.user && name !== 'login') name = 'login';
+    // hide all
+    Object.values(sections).forEach(s => { s.classList.remove('show'); s.style.display = 'none'; });
+    // show target
+    const target = sections[name];
+    if(!target) return;
+    target.style.display = 'block';
+    requestAnimationFrame(()=> target.classList.add('show'));
+    // nav active
+    document.querySelectorAll('header nav button[data-section]').forEach(b => b.classList.toggle('active', b.getAttribute('data-section') === name));
+    // show logout
+    document.getElementById('logout-btn').style.display = state.user ? 'inline-block' : 'none';
+    // extra renders
+    if(name === 'menu') renderMenu(MENU);
+    if(name === 'cart') renderCart();
+    if(name === 'home') renderFeatured();
+    if(name === 'orders') renderOrders();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  // initial
+  window.addEventListener('load', ()=> {
+    showOffer('🎉 Flat 20% Off on Cappuccino Today!');
+    document.getElementById('year').textContent = new Date().getFullYear();
+    if(state.user) showSection('home'); else showSection('login');
+  });
+
+  // nav handlers
+  document.querySelectorAll('header nav button[data-section]').forEach(btn=>{
+    btn.addEventListener('click', ()=> {
+      const sec = btn.getAttribute('data-section');
+      showSection(sec);
+    });
+  });
+  document.querySelectorAll('[data-link]').forEach(btn=> btn.addEventListener('click', ()=> showSection(btn.getAttribute('data-link'))));
+
+  // login tab toggles
+  document.getElementById('tab-pass').addEventListener('click', ()=> {
+    document.getElementById('pass-form').classList.remove('hidden');
+    document.getElementById('otp-intro').classList.add('hidden');
+  });
+  document.getElementById('tab-otp').addEventListener('click', ()=> {
+    document.getElementById('pass-form').classList.add('hidden');
+    document.getElementById('otp-intro').classList.remove('hidden');
+  });
+
+  // password login
+  document.getElementById('autofill-btn').addEventListener('click', ()=> {
+    document.getElementById('user-name').value = 'admin';
+    document.getElementById('user-pass').value = '1234';
+  });
+  document.getElementById('pw-login-btn').addEventListener('click', ()=> {
+    const u = document.getElementById('user-name').value.trim();
+    const p = document.getElementById('user-pass').value.trim();
+    if(u === 'admin' && p === '1234'){
+      state.user = u; localStorage.setItem('brew_user', u);
+      showToast('Login successful 🎉');
+      setTimeout(()=> showSection('home'), 900);
+    } else alert('Invalid credentials (use admin / 1234)');
+  });
+
+  // OTP modal (simulated)
+  const otpModal = document.getElementById('otp-modal');
+  const sendOtpBtn = document.getElementById('send-otp-btn');
+  const otpCodeEl = document.getElementById('otp-code');
+  const otpStage = document.getElementById('otp-stage');
+  const verifyOtpBtn = document.getElementById('verify-otp-btn');
+  const resendBtn = document.getElementById('resend-btn');
+  const closeOtpBtn = document.getElementById('close-otp');
+
+  document.getElementById('open-otp-btn').addEventListener('click', ()=> {
+    const phone = document.getElementById('phone-input').value.trim();
+    document.getElementById('modal-phone').value = phone;
+    openOtpModal();
+  });
+
+  function openOtpModal(){
+    otpModal.classList.add('show'); otpModal.setAttribute('aria-hidden','false');
+    otpStage.classList.add('hidden'); otpCodeEl.textContent = '— — — — — —';
+    document.getElementById('otp-input').value = '';
+    clearInterval(state.otpTimer); resendBtn.disabled = true; document.getElementById('timer').textContent = '30'; state.otpCountdown = 30;
+  }
+  function closeOtpModal(){ otpModal.classList.remove('show'); otpModal.setAttribute('aria-hidden','true'); }
+
+  sendOtpBtn.addEventListener('click', ()=> {
+    const phone = document.getElementById('modal-phone').value.trim();
+    if(!phone || phone.length < 6){ alert('Enter a valid phone'); return; }
+    state.otp = Math.floor(100000 + Math.random()*900000).toString();
+    otpCodeEl.textContent = state.otp; otpStage.classList.remove('hidden');
+    startOtpCountdown(30); showToast('OTP generated (demo) — check modal');
+  });
+
+  function startOtpCountdown(sec){
+    state.otpCountdown = sec; document.getElementById('timer').textContent = state.otpCountdown; resendBtn.disabled = true;
+    clearInterval(state.otpTimer);
+    state.otpTimer = setInterval(()=> {
+      state.otpCountdown--; document.getElementById('timer').textContent = state.otpCountdown;
+      if(state.otpCountdown <= 0){ clearInterval(state.otpTimer); state.otpTimer = null; resendBtn.disabled = false; document.getElementById('timer').textContent = '0'; }
+    },1000);
+  }
+
+  resendBtn.addEventListener('click', ()=> {
+    state.otp = Math.floor(100000 + Math.random()*900000).toString();
+    otpCodeEl.textContent = state.otp; document.getElementById('otp-input').value = '';
+    startOtpCountdown(30);
+  });
+
+  verifyOtpBtn.addEventListener('click', ()=> {
+    const entered = document.getElementById('otp-input').value.trim();
+    if(!entered){ alert('Enter OTP'); return; }
+    if(entered === state.otp){
+      closeOtpModal();
+      state.user = document.getElementById('modal-phone').value.trim() || 'phone_user';
+      localStorage.setItem('brew_user', state.user);
+      showToast('Phone verified — logged in 🎉');
+      setTimeout(()=> showSection('home'), 900);
+    } else alert('Incorrect OTP');
+  });
+
+  closeOtpBtn.addEventListener('click', closeOtpModal);
+
+  // menu & cart
+  function renderMenu(items){
+    const grid = document.getElementById('menu-grid');
+    grid.innerHTML = '';
+    items.forEach(it=>{
+      const d = document.createElement('div'); d.className = 'card';
+      d.innerHTML = `<img src="${it.img}" alt="${it.name}"><div class="content"><h4 style="margin:0;color:#fff">${it.name}</h4><p style="margin:8px 0;color:var(--muted)">Handcrafted • Fresh</p><div style="display:flex;justify-content:space-between;align-items:center"><div class="price">₹${it.price}</div><div style="display:flex;gap:8px"><button class="btn btn-primary add-btn">Add</button><button class="btn btn-ghost view-btn">Add & View</button></div></div></div>`;
+      grid.appendChild(d);
+      d.querySelector('.add-btn').addEventListener('click', ()=> { addToCart(it); });
+      d.querySelector('.view-btn').addEventListener('click', ()=> { addToCart(it); showSection('cart'); });
+    });
+  }
+
+  function renderFeatured(){
+    const picks = [MENU[1], MENU[3], MENU[5]]; // capp, iced, avo
+    const f = document.getElementById('featured-grid');
+    if(!f) return;
+    f.innerHTML = '';
+    picks.forEach(it=>{
+      const d = document.createElement('div'); d.className = 'card';
+      d.innerHTML = `<img src="${it.img}" alt="${it.name}"><div class="content"><h4 style="margin:0;color:#fff">${it.name}</h4><p style="margin:8px 0;color:var(--muted)">₹${it.price}</p><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary add-btn">Add</button></div></div>`;
+      f.appendChild(d);
+      d.querySelector('.add-btn').addEventListener('click', ()=> addToCart(it));
+    });
+  }
+
+  function addToCart(item){
+    const found = state.cart.find(c=>c.id === item.id);
+    if(found) found.qty = (found.qty || 1) + 1;
+    else state.cart.push({...item, qty:1});
+    localStorage.setItem('brew_cart', JSON.stringify(state.cart));
+    showToast(`${item.name} added to cart`);
+    updateCartUI();
+  }
+
+  function updateCartUI(){
+    const subtotal = state.cart.reduce((s,i)=> s + i.price*(i.qty||1), 0);
+    document.getElementById('cart-total').textContent = 'Subtotal: ₹' + subtotal;
+  }
+
+  function renderCart(){
+    const list = document.getElementById('cart-list');
+    list.innerHTML = '';
+    if(!state.cart.length){ list.innerHTML = '<p class="small">Your cart is empty</p>'; document.getElementById('cart-total').textContent='Subtotal: ₹0'; return; }
+    let total = 0;
+    state.cart.forEach(it=>{
+      total += it.price * (it.qty || 1);
+      const row = document.createElement('div'); row.className = 'cart-item';
+      row.innerHTML = `<img src="${it.img}"><div style="min-width:200px"><strong style="color:#fff">${it.name}</strong><div class="small">₹${it.price} x <input type="number" min="1" value="${it.qty||1}" style="width:64px" data-id="${it.id}"></div></div><div style="margin-left:auto;color:var(--accent)">₹${it.price*(it.qty||1)}</div>`;
+      list.appendChild(row);
+      row.querySelector('input').addEventListener('change', (e)=> {
+        const id = Number(e.target.getAttribute('data-id'));
+        const val = Number(e.target.value);
+        const idx = state.cart.findIndex(c=>c.id===id);
+        if(idx>-1){ state.cart[idx].qty = Math.max(1, val); localStorage.setItem('brew_cart', JSON.stringify(state.cart)); renderCart(); updateCartUI(); }
+      });
+    });
+    document.getElementById('cart-total').textContent = 'Subtotal: ₹' + total;
+  }
+
+  document.getElementById('clear-cart-btn').addEventListener('click', ()=> {
+    if(confirm('Clear cart?')){ state.cart = []; localStorage.removeItem('brew_cart'); renderCart(); updateCartUI(); }
+  });
+
+  // ORDERS: save on checkout & render
+  function saveOrderAndClearCart(){
+    const now = new Date();
+    const order = {
+      id: 'ORD' + now.getTime(),
+      timestamp: now.toISOString(),
+      items: state.cart.map(it => ({ id: it.id, name: it.name, price: it.price, qty: it.qty })),
+      total: state.cart.reduce((s,i)=> s + i.price*(i.qty||1), 0)
+    };
+    const orders = JSON.parse(localStorage.getItem('brew_orders') || '[]');
+    orders.unshift(order); // newest first
+    localStorage.setItem('brew_orders', JSON.stringify(orders));
+    state.orders = orders;
+    // clear cart
+    state.cart = []; localStorage.removeItem('brew_cart');
+  }
+
+  function renderOrders(){
+    const out = document.getElementById('orders-list');
+    out.innerHTML = '';
+    const orders = JSON.parse(localStorage.getItem('brew_orders') || '[]');
+    if(!orders.length){ out.innerHTML = '<p class="small">No past orders found.</p>'; return; }
+    orders.forEach(ord => {
+      const card = document.createElement('div'); card.className = 'order-card';
+      const dt = new Date(ord.timestamp);
+      card.innerHTML = `<div class="order-meta"><div><strong>Order ${ord.id}</strong><div class="small">Placed: ${dt.toLocaleString()}</div></div><div style="text-align:right"><div class="small">Total: ₹${ord.total}</div><button class="btn btn-ghost reorder-btn" data-id="${ord.id}">Reorder</button></div></div><ul class="order-items">${ord.items.map(i=>`<li>${i.qty} × ${i.name} — ₹${i.price}</li>`).join('')}</ul>`;
+      out.appendChild(card);
+      card.querySelector('.reorder-btn').addEventListener('click', ()=> {
+        // find order and copy items back to cart
+        const target = ord;
+        target.items.forEach(it => {
+          const menuItem = MENU.find(m=>m.id === it.id);
+          if(menuItem){
+            for(let k=0;k<it.qty;k++) addToCart(menuItem);
+          }
+        });
+        showToast('Order added to cart (reorder)');
+        showSection('cart');
+      });
+    });
+  }
+
+  document.getElementById('clear-orders-btn').addEventListener('click', ()=> {
+    if(confirm('Clear all past orders? This cannot be undone on this device.')){
+      localStorage.removeItem('brew_orders');
+      state.orders = [];
+      renderOrders();
+      showToast('All orders cleared');
+    }
+  });
+
+  // checkout: save order then show thank-you
+  document.getElementById('checkout-btn').addEventListener('click', ()=> {
+    if(state.cart.length === 0){ alert('Your cart is empty'); return; }
+    saveOrderAndClearCart();
+    renderCart(); updateCartUI();
+    showToast('Order placed — thank you!');
+    setTimeout(()=> showSection('thank'), 900);
+  });
+
+  // menu search
+  document.getElementById('menu-search-btn').addEventListener('click', ()=> {
+    const q = document.getElementById('menu-search').value.trim().toLowerCase();
+    const cat = document.getElementById('menu-filter').value;
+    const results = MENU.filter(it => (cat === 'all' || it.category === cat) && (q === '' || it.name.toLowerCase().includes(q)));
+    if(results.length === 0){ alert('No items found'); return; }
+    renderMenu(results);
+  });
+
+  // logout
+  document.getElementById('logout-btn').addEventListener('click', ()=> {
+    state.user = null; localStorage.removeItem('brew_user'); showToast('Logged out'); setTimeout(()=> showSection('login'), 600);
+  });
+
+  // toast helper
+  function showToast(msg){
+    toastEl.textContent = msg; toastEl.classList.add('show'); setTimeout(()=> toastEl.classList.remove('show'), 2200);
+  }
+
+  // initialize UI
+  function init(){
+    renderMenu(MENU);
+    renderFeatured();
+    renderCart();
+    renderOrders();
+    if(state.user) showSection('home'); else showSection('login');
+  }
+  init();
+
+  // expose for debugging
+  window._Brew = { state, MENU, addToCart, renderMenu, renderCart, renderOrders };
+
+})();
+</script>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
