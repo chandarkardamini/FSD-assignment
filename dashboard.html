@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamic User Dashboard</title>
+
+  <style>
+    /* ===== GLOBAL STYLES ===== */
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+      color: #f8fafc;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      padding: 18px 10px;
+      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar button {
+      background: none;
+      border: none;
+      color: #e2e8f0;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .navbar button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .navbar button.active {
+      background: linear-gradient(90deg, #3b82f6, #06b6d4);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    }
+
+    /* ===== CONTENT AREA ===== */
+    .content {
+      max-width: 950px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      padding: 30px;
+      transition: all 0.3s ease;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    h2 {
+      color: #93c5fd;
+      margin-top: 0;
+    }
+
+    p {
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: rgba(255, 255, 255, 0.08);
+      margin: 10px 0;
+      padding: 12px 15px;
+      border-radius: 10px;
+      color: #f1f5f9;
+      transition: 0.3s;
+    }
+
+    li:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+    }
+
+    .modal {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      padding: 25px;
+      border-radius: 14px;
+      width: 320px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+      animation: popIn 0.4s ease;
+    }
+
+    .modal button {
+      margin-top: 10px;
+      background: linear-gradient(90deg, #3b82f6, #06b6d4);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .modal button:hover {
+      opacity: 0.9;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .navbar {
+        flex-wrap: wrap;
+      }
+      .content {
+        margin: 20px;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ===== NAVBAR ===== -->
+  <div class="navbar">
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="profile">Profile</button>
+    <button class="tab-btn" data-tab="settings">Settings</button>
+    <button class="tab-btn" data-tab="notifications">Notifications</button>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="content" id="content-area"></div>
+
+  <!-- ===== MODAL ROOT ===== -->
+  <div id="modal-root"></div>
+
+  <script>
+    const users = [
+      { id: 1, name: "John Doe", role: "Admin" },
+      { id: 2, name: "Aisha Khan", role: "Editor" },
+      { id: 3, name: "Ravi Kumar", role: "Viewer" },
+    ];
+
+    const templates = {
+      dashboard: `
+        <h2>📊 Dashboard Overview</h2>
+        <p>Welcome back! Here are your registered users:</p>
+        <ul>
+          ${users.map(u => `<li><strong>${u.name}</strong> — ${u.role}</li>`).join("")}
+        </ul>
+      `,
+      profile: `
+        <h2>👤 User Profile</h2>
+        <p><strong>Name:</strong> John Doe</p>
+        <p><strong>Email:</strong> johndoe@example.com</p>
+        <p><strong>Role:</strong> Admin</p>
+      `,
+      settings: `
+        <h2>⚙️ Settings</h2>
+        <p>Manage your preferences and account options.</p>
+        <button id="openModalBtn">Open Preferences</button>
+      `,
+      notifications: `
+        <h2>🔔 Notifications</h2>
+        <ul>
+          <li>📩 You have 3 new messages.</li>
+          <li>🛠 Server maintenance tonight at 11 PM.</li>
+          <li>🔐 Password expires in 5 days.</li>
+        </ul>
+      `,
+    };
+
+    const contentArea = document.getElementById("content-area");
+    contentArea.innerHTML = templates.dashboard;
+
+    const buttons = document.querySelectorAll(".tab-btn");
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        buttons.forEach((b) => b.classList.remove("active"));
+        e.target.classList.add("active");
+        const tab = e.target.getAttribute("data-tab");
+
+        contentArea.innerHTML = templates[tab] || "<h2>Error: Page not found</h2>";
+        attachModalHandler();
+      });
+    });
+
+    function attachModalHandler() {
+      const openModalBtn = document.getElementById("openModalBtn");
+      if (!openModalBtn) return;
+
+      openModalBtn.addEventListener("click", () => {
+        const modalRoot = document.getElementById("modal-root");
+        modalRoot.innerHTML = `
+          <div class="modal-overlay">
+            <div class="modal">
+              <h3>⚙️ Preferences</h3>
+              <p>Change your theme or notification settings here.</p>
+              <button id="closeModalBtn">Close</button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById("closeModalBtn").addEventListener("click", () => {
+          modalRoot.innerHTML = "";
+        });
+      });
+    }
+
+    attachModalHandler();
+  </script>
+</body>
+</html>
