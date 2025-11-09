@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neon Glass Carousel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Poppins", system-ui, sans-serif;
+    background: radial-gradient(circle at top left, #0d0f24, #090a1a 70%);
+    color: #e5e7eb;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .carousel-wrap {
+    width: 100%;
+    max-width: 960px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.3);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .carousel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  .slides {
+    display: flex;
+    transition: transform 0.5s cubic-bezier(0.22, 0.9, 0.24, 1);
+  }
+
+  .slide {
+    min-width: 100%;
+    position: relative;
+  }
+
+  .slide img {
+    width: 100%;
+    height: 60vh;
+    object-fit: cover;
+    border-radius: 12px;
+    user-select: none;
+    filter: brightness(0.85);
+  }
+
+  .meta {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(17, 25, 40, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 10px 16px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 15px;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+  }
+
+  .meta .caption {
+    font-size: 13px;
+    color: #c7d2fe;
+  }
+
+  /* Controls */
+  .controls {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    padding: 0 12px;
+  }
+
+  .btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 20px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.25s ease;
+  }
+
+  .btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+    transform: scale(1.1);
+  }
+
+  /* Indicators */
+  .indicators {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .dot.active {
+    background: linear-gradient(135deg, #6366f1, #a78bfa);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.8);
+  }
+
+  /* Thumbnails */
+  .thumbs {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .thumb {
+    flex: 0 0 100px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    opacity: 0.7;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: 0.25s ease;
+  }
+
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .thumb.active {
+    opacity: 1;
+    border-color: #6366f1;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+  }
+
+  .toolbar {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  .toggle, select {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-radius: 999px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  @media (max-width: 640px) {
+    .slide img { height: 45vh; }
+    .thumb { flex: 0 0 80px; height: 52px; }
+  }
+</style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    function Slide({ src, title, index, active }) {
+      return (
+        <div className="slide" aria-hidden={!active}>
+          <img src={src} alt={title} draggable="false" />
+          <div className="meta">
+            <div style={{ fontWeight: 600 }}>{title}</div>
+            <div className="caption">Photo {index + 1}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function Thumbnails({ slides, activeIndex, onPick }) {
+      return (
+        <div className="thumbs">
+          {slides.map((s, i) => (
+            <div
+              key={s.src}
+              className={`thumb ${i === activeIndex ? "active" : ""}`}
+              onClick={() => onPick(i)}
+            >
+              <img src={s.src} alt={s.title} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function Controls({ onPrev, onNext }) {
+      return (
+        <div className="controls">
+          <button className="btn" onClick={onPrev}>❮</button>
+          <button className="btn" onClick={onNext}>❯</button>
+        </div>
+      );
+    }
+
+    function Toolbar({ isAuto, onToggleAuto, speed, onSpeedChange }) {
+      return (
+        <div className="toolbar">
+          <button className="toggle" onClick={onToggleAuto}>
+            {isAuto ? "⏸ Auto" : "▶ Auto"}
+          </button>
+          <select value={speed} onChange={(e) => onSpeedChange(Number(e.target.value))}>
+            <option value={3000}>3s</option>
+            <option value={4000}>4s</option>
+            <option value={5000}>5s</option>
+          </select>
+        </div>
+      );
+    }
+
+    function PhotoCarousel({ slides }) {
+      const [current, setCurrent] = useState(0);
+      const [auto, setAuto] = useState(true);
+      const [intervalMs, setIntervalMs] = useState(4000);
+
+      useEffect(() => {
+        if (!auto) return;
+        const timer = setInterval(() => next(), intervalMs);
+        return () => clearInterval(timer);
+      }, [auto, intervalMs, current]);
+
+      const next = () => setCurrent((prev) => (prev + 1) % slides.length);
+      const prev = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+      const pick = (i) => setCurrent(i);
+      const toggleAuto = () => setAuto((a) => !a);
+
+      return (
+        <div className="carousel-wrap">
+          <Toolbar isAuto={auto} onToggleAuto={toggleAuto} speed={intervalMs} onSpeedChange={setIntervalMs} />
+          <div className="carousel">
+            <div className="slides" style={{ transform: `translateX(-${current * 100}%)` }}>
+              {slides.map((s, i) => (
+                <Slide key={s.src} src={s.src} title={s.title} index={i} active={i === current} />
+              ))}
+            </div>
+            <Controls onPrev={prev} onNext={next} />
+            <div className="indicators">
+              {slides.map((_, i) => (
+                <div
+                  key={i}
+                  className={`dot ${i === current ? "active" : ""}`}
+                  onClick={() => pick(i)}
+                />
+              ))}
+            </div>
+          </div>
+          <Thumbnails slides={slides} activeIndex={current} onPick={pick} />
+        </div>
+      );
+    }
+
+    const slides = [
+      { src: "https://picsum.photos/id/1011/1200/800", title: "Golden Fields" },
+      { src: "https://picsum.photos/id/1015/1200/800", title: "Mountain Lake" },
+      { src: "https://picsum.photos/id/1016/1200/800", title: "Foggy Forest" },
+      { src: "https://picsum.photos/id/1031/1200/800", title: "City Lights" },
+      { src: "https://picsum.photos/id/1035/1200/800", title: "Desert Dunes" }
+    ];
+
+    ReactDOM.createRoot(document.getElementById("root")).render(
+      <React.StrictMode>
+        <PhotoCarousel slides={slides} />
+      </React.StrictMode>
+    );
+  </script>
+</body>
+</html>
